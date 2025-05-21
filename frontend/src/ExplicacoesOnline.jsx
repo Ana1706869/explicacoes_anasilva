@@ -77,7 +77,7 @@ const ExplicacoesOnline = () => {
         const message={
           type:"join-room",
           userId:id,
-          peerId: peer.id,
+          peerId: peerId,
           roomId:"explicacoes-room",
           nome:nome
         }
