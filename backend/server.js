@@ -36,7 +36,19 @@ const upload=multer({storage:storage})
 
 const app=express()
 const server=http.createServer(app)
-const wss=new WebSocket.Server({server,path:"/ws"})
+const wss=new WebSocket.Server({noServer:true,perMessageDeflate:false})
+console.log("Estado atual users",users)
+console.log("Estado atual usersInRoom",usersInRoom)
+
+server.on("upgrade",(request,socket,head)=>{
+  if (request.url==="/ws"){
+    wss.handleUpgrade(request,socket,head, (ws)=>{
+      wss.emit("connection",ws,request)
+    })
+  }else{
+    socket.destroy()
+  }
+})
 
 
 
@@ -44,8 +56,7 @@ const wss=new WebSocket.Server({server,path:"/ws"})
 
 
     wss.on("connection", (ws,req) => {
-        console.log("Cliente conectado:")
-       
+        console.log("Cliente conectado:"),req.socket.remoteAddress || "sem IP"
 
        
 
@@ -53,6 +64,7 @@ const wss=new WebSocket.Server({server,path:"/ws"})
 
         ws.on("message", (message) => {
             try {
+              console.log("Mensagem recebida bruta", message)
               const data = JSON.parse(message);
               console.log("Mensagem recebida do cliente", data);
          
