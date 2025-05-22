@@ -73,6 +73,7 @@ const ExplicacoesOnline = () => {
      
       ws.current.onopen=()=>{
         console.log("Websocket aberto")
+        console.log("URL WS",ws.current)
        
         const message={
           type:"join-room",
@@ -82,7 +83,7 @@ const ExplicacoesOnline = () => {
           nome:nome
         }
        
-        console.log(message)
+        console.log("Enviando join-room com peerId",peerId)
         ws.current.send(JSON.stringify(message))
       }
          
@@ -96,7 +97,10 @@ const ExplicacoesOnline = () => {
         console.log("Websocket recebeu algo")
         console.log("Mensagem recebida via websocket",event.data)
         try{
-        const data = JSON.parse(event.data);
+        const data = JSON.parse(event.data)
+
+       
+        
      
         console.log("Data recebida",data)
 
@@ -123,6 +127,10 @@ const ExplicacoesOnline = () => {
                  
                   }else{
                     console.error("Dados de utilizadores não recebido corretamente")
+                  }
+
+                  if(data.type==="join-room"){
+                    console.log("join-room",data.message)
                   }
                  
                  
