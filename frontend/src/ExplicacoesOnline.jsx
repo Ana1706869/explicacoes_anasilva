@@ -54,7 +54,7 @@ const ExplicacoesOnline = () => {
         setNomeExplicando(nome);
         setExplicandoId(id);
 
-         navigator.mediaDevices
+       /*  navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         originalStream.current=stream
@@ -62,20 +62,21 @@ const ExplicacoesOnline = () => {
         if(localVideoRef.current){
           localVideoRef.current.srcObject=stream
         }
-        if(!peerRef.current){
-        peerRef.current=new Peer()
-         const peer=peerRef.current
-          peer.on("open",(peerId)=>{
-            console.log("Peer conectado com id:", peerId);
+        */
            
         ws.current = new WebSocket(process.env.REACT_APP_WS_URL)
        
      
       ws.current.onopen=()=>{
         console.log("Websocket aberto")
+        peerRef.current=new Peer()
+         const peer=peerRef.current
+          peer.on("open",(peerId)=>{
+            console.log("Peer conectado com id:", peerId);
+           
         console.log("URL WS",ws.current)
        
-        const message={
+        setTimeout(()=>{const message={
           type:"join-room",
           userId:id,
           peerId: peerId,
@@ -84,13 +85,18 @@ const ExplicacoesOnline = () => {
         }
        
         console.log("Enviando join-room com peerId",message)
-        ws.current.send(JSON.stringify(message))
+        ws.current.send(JSON.stringify(message))},100)
+      
         console.log("Mensagem",JSON.stringify(message))
       
-    }
+    })
+  }
+})
+      
+  
          
          
-
+/*
  
      
       ws.current.onmessage=(event)=>{
@@ -137,7 +143,7 @@ const ExplicacoesOnline = () => {
                  
                  
                  
-                         usersInRoom.forEach((peerId) => {
+                        /* usersInRoom.forEach((peerId) => {
                             if (peerId!==peer.id &&!peerConnections.current[peerId]) {
                               try{
                              
@@ -303,7 +309,7 @@ const ExplicacoesOnline = () => {
                           }
                         })
                       })
-                    }
+                    
                    
 
                  
@@ -312,11 +318,11 @@ const ExplicacoesOnline = () => {
 
 
                   }).catch((err)=>{console.error("Erro ao acessar câmara/microfone",err)
-                  })
+                  
 
-                }).catch((err)=>{console.error("Erro ao buscar dados do explicando",err)
-                })
-               
+                }).catch((err)=>{console.error("Erro ao buscar dados do explicando",err)*/
+                
+                
                    
                  
                
