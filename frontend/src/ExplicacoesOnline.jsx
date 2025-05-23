@@ -69,7 +69,7 @@ const ExplicacoesOnline = () => {
      
       ws.current.onopen=()=>{
         console.log("Websocket aberto",ws.current.readyState)
-        ws.current.send(JSON.stringify({type:"keep-alive",message:"Conexão ativa"}))
+        
         peerRef.current=new Peer()
          const peer=peerRef.current
           peer.on("open",(peerId)=>{
