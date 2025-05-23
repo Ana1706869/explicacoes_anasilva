@@ -76,7 +76,7 @@ const ExplicacoesOnline = () => {
            
         console.log("URL WS",ws.current)
        
-        setTimeout(()=>{const message={
+        const message={
           type:"join-room",
           userId:id,
           peerId: peerId,
@@ -85,13 +85,14 @@ const ExplicacoesOnline = () => {
         }
        
         console.log("Enviando join-room com peerId",message)
-        ws.current.send(JSON.stringify(message))},100)
+        ws.current.send(JSON.stringify(message))
       
         console.log("Mensagem",JSON.stringify(message))
-      
+          
     })
   }
-})
+      })
+
       
   
          
