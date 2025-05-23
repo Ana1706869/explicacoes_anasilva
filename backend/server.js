@@ -43,6 +43,7 @@ console.log("Estado atual usersInRoom",usersInRoom)
 server.on("upgrade",(request,socket,head)=>{
   if (request.url==="/ws"){
     wss.handleUpgrade(request,socket,head, (ws)=>{
+      console.log("Pedido de upgrade definido",request.url)
       wss.emit("connection",ws,request)
     })
   }else{
