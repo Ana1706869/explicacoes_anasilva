@@ -75,7 +75,6 @@ const ExplicacoesOnline = () => {
         console.log("Websocket aberto")
         console.log("URL WS",ws.current)
        
-        setTimeout(()=>{
         const message={
           type:"join-room",
           userId:id,
@@ -86,7 +85,8 @@ const ExplicacoesOnline = () => {
        
         console.log("Enviando join-room com peerId",message)
         ws.current.send(JSON.stringify(message))
-      },100)
+        console.log("Mensagem",JSON.stringify(message))
+      
     }
          
          
