@@ -57,6 +57,9 @@ server.on("upgrade",(request,socket,head)=>{
 
     wss.on("connection", (ws,req) => {
         console.log("Cliente conectado:",req.socket.remoteAddress || "sem IP")
+        console.log("Mensagem recebida bruta", message)
+              const data = JSON.parse(message);
+              console.log("Mensagem recebida do cliente", data);
         const { roomId, peerId, nome } = data;
                 console.log(`Usuário ${nome} com peerId ${peerId} entrou na sala ${roomId}`);
                 users[peerId] = nome;
@@ -68,9 +71,7 @@ server.on("upgrade",(request,socket,head)=>{
 
         ws.on("message", (message) => {
             try {
-              console.log("Mensagem recebida bruta", message)
-              const data = JSON.parse(message);
-              console.log("Mensagem recebida do cliente", data);
+              
          
               if (data.type === "join-room") {
                 const { roomId, peerId, nome } = data;
