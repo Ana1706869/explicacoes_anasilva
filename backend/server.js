@@ -58,6 +58,14 @@ server.on("upgrade",(request,socket,head)=>{
 
     wss.on("connection", (ws,req) => {
         console.log("Cliente conectado:",req.socket.remoteAddress || "sem IP")
+        const closeTimeOut=setTimeout(()=>{
+          if(!ws.peerId){
+            console.warn("Fechando ligação por ausência de peerId após 10 segundos")
+            ws.close()
+          }
+        },10000)
+
+        
        
 
        
@@ -69,6 +77,10 @@ server.on("upgrade",(request,socket,head)=>{
             try {
               console.log("Mensagem recebida bruta", message)
               const data = JSON.parse(message);
+              if(data.peerId){
+                ws.peerId=data.peerId
+                clearTimeout(closeTimeOut)
+              }
               console.log("Mensagem recebida do cliente", data);
         const { roomId, peerId, nome } = data;
                 console.log(`Usuário ${nome} com peerId ${peerId} entrou na sala ${roomId}`);
