@@ -84,7 +84,7 @@ const ExplicacoesOnline = () => {
           nome:nome
         }
        
-        console.log("Enviando join-room com peerId",peerId)
+        console.log("Enviando join-room com peerId",message)
         ws.current.send(JSON.stringify(message))
       },100)
     }
