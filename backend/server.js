@@ -56,7 +56,11 @@ server.on("upgrade",(request,socket,head)=>{
 
 
     wss.on("connection", (ws,req) => {
-        console.log("Cliente conectado:"),req.socket.remoteAddress || "sem IP"
+        console.log("Cliente conectado:",req.socket.remoteAddress || "sem IP")
+        const { roomId, peerId, nome } = data;
+                console.log(`Usuário ${nome} com peerId ${peerId} entrou na sala ${roomId}`);
+                users[peerId] = nome;
+                ws.peerId = peerId;
 
        
 
@@ -140,6 +144,7 @@ server.on("upgrade",(request,socket,head)=>{
 
 
     ws.on("close",()=>{
+      console.log(`Conexão fechada para ${ws.peerId}`)
         const {peerId}=ws
         if(peerId && users[peerId]){
 
@@ -148,6 +153,17 @@ server.on("upgrade",(request,socket,head)=>{
         if(index>-1){
            usersInRoom.splice(index,1)
     }
+    const roomUpdate=JSON.stringify({
+      type:"room-update",
+      usersInRoom,
+      userNames:users
+    }
+    )
+    wss.clients.forEach(client=>{
+      if(client.readyState===WebSocket.OPEN){
+        client.send(roomUpdate)
+      }
+    })
 }
     console.log(`Utilizador com peerId ${ws.peerId} desconectado da sala`)
 })
