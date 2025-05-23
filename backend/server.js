@@ -147,15 +147,16 @@ server.on("upgrade",(request,socket,head)=>{
 
 
     ws.on("close",()=>{
+      if(!ws.peerId){
+        console.log("conexão fechada antes de receber o peerId")
+        return
+      }
       console.log(`Conexão fechada para ${ws.peerId}`)
-        const {peerId}=ws
-        if(peerId && users[peerId]){
+        
 
-        delete users[peerId]
-        const index=usersInRoom.indexOf(peerId)
-        if(index>-1){
-           usersInRoom.splice(index,1)
-    }
+           usersInRoom.splice(usersInRoom.indexOf(ws.peerId),1)
+           delete users[ws.peerId]
+    
     const roomUpdate=JSON.stringify({
       type:"room-update",
       usersInRoom,
@@ -167,7 +168,7 @@ server.on("upgrade",(request,socket,head)=>{
         client.send(roomUpdate)
       }
     })
-}
+
     console.log(`Utilizador com peerId ${ws.peerId} desconectado da sala`)
 })
     })
