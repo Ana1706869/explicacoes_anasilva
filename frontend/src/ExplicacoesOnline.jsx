@@ -68,13 +68,16 @@ const ExplicacoesOnline = () => {
        
      
       ws.current.onopen=()=>{
-        console.log("Websocket aberto")
+        console.log("Websocket aberto",ws.current.readyState)
+        ws.current.send(JSON.stringify({type:"keep-alive",message:"Conexão ativa"}))
         peerRef.current=new Peer()
          const peer=peerRef.current
           peer.on("open",(peerId)=>{
             console.log("Peer conectado com id:", peerId);
            
         console.log("URL WS",ws.current)
+
+        if(ws.current.readyState===WebSocket.OPEN){
        
         const message={
           type:"join-room",
@@ -88,6 +91,9 @@ const ExplicacoesOnline = () => {
         ws.current.send(JSON.stringify(message))
       
         console.log("Mensagem",JSON.stringify(message))
+      }else{
+        console.warn("WebSocket já foi fechado antes de enviar join-room")
+      }
           
     })
   }
