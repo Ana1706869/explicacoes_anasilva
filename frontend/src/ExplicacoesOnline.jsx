@@ -54,7 +54,7 @@ const ExplicacoesOnline = () => {
         setNomeExplicando(nome);
         setExplicandoId(id);
 
-       /*  navigator.mediaDevices
+         navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
       .then((stream) => {
         originalStream.current=stream
@@ -62,22 +62,18 @@ const ExplicacoesOnline = () => {
         if(localVideoRef.current){
           localVideoRef.current.srcObject=stream
         }
-        */
-           
-        ws.current = new WebSocket(process.env.REACT_APP_WS_URL)
-       
-     
-      ws.current.onopen=()=>{
-        console.log("Websocket aberto",ws.current.readyState)
-        
+        if(!peerRef.current){
         peerRef.current=new Peer()
          const peer=peerRef.current
           peer.on("open",(peerId)=>{
             console.log("Peer conectado com id:", peerId);
            
+        ws.current = new WebSocket(process.env.REACT_APP_WS_URL)
+       
+     
+      ws.current.onopen=()=>{
+        console.log("Websocket aberto")
         console.log("URL WS",ws.current)
-
-        if(ws.current.readyState===WebSocket.OPEN){
        
         const message={
           type:"join-room",
@@ -87,23 +83,12 @@ const ExplicacoesOnline = () => {
           nome:nome
         }
        
-        console.log("Enviando join-room com peerId",message)
+        console.log("Enviando join-room com peerId",peerId)
         ws.current.send(JSON.stringify(message))
-      
-        console.log("Mensagem",JSON.stringify(message))
-      }else{
-        console.warn("WebSocket já foi fechado antes de enviar join-room")
       }
-          
-    })
-  }
-      })
+         
+         
 
-      
-  
-         
-         
-/*
  
      
       ws.current.onmessage=(event)=>{
@@ -150,7 +135,7 @@ const ExplicacoesOnline = () => {
                  
                  
                  
-                        /* usersInRoom.forEach((peerId) => {
+                         usersInRoom.forEach((peerId) => {
                             if (peerId!==peer.id &&!peerConnections.current[peerId]) {
                               try{
                              
@@ -316,7 +301,7 @@ const ExplicacoesOnline = () => {
                           }
                         })
                       })
-                    
+                    }
                    
 
                  
@@ -325,11 +310,11 @@ const ExplicacoesOnline = () => {
 
 
                   }).catch((err)=>{console.error("Erro ao acessar câmara/microfone",err)
-                  
+                  })
 
-                }).catch((err)=>{console.error("Erro ao buscar dados do explicando",err)*/
-                
-                
+                }).catch((err)=>{console.error("Erro ao buscar dados do explicando",err)
+                })
+               
                    
                  
                
