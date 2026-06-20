@@ -81,6 +81,174 @@ const ExplicacoesOnline = () => {
               { urls: "stun:stun2.l.google.com:19302" },
               { urls: "stun:stun3.l.google.com:19302" }
             ]
+
+            const setupRealtime = () => {
+              if (peerRef.current) return
+
+              peerRef.current = new Peer(undefined, {
+                config: {
+                  iceServers: [
+                    { urls: "stun:stun.l.google.com:19302" },
+                    { urls: "stun:stun1.l.google.com:19302" },
+                    { urls: "stun:stun2.l.google.com:19302" },
+                    { urls: "stun:stun3.l.google.com:19302" }
+                  ]
+                }
+              })
+
+              const peer = peerRef.current
+
+              peer.on("open", (peerId) => {
+                console.log("Peer conectado com id:", peerId)
+
+                const runtimeWsBaseUrl = wsBaseUrl || `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`
+                ws.current = new WebSocket(`${runtimeWsBaseUrl}/ws`)
+
+                ws.current.onopen = () => {
+                  const joinMessage = {
+                    type: "join-room",
+                    userId: id,
+                    peerId,
+                    roomId: "explicacoes-room",
+                    nome
+                  }
+
+                  ws.current.send(JSON.stringify(joinMessage))
+                }
+
+                ws.current.onmessage = (event) => {
+                  try {
+                    const data = JSON.parse(event.data)
+
+                    if (data.type === "room-update") {
+                      const { usersInRoom: roomUsers, userNames } = data
+
+                      if (roomUsers && userNames) {
+                        setUsersInRoom(roomUsers.map((roomPeerId) => ({
+                          peerId: roomPeerId,
+                          nomeUtilizador: userNames[roomPeerId] || "Utilizador desconhecido"
+                        })))
+                      }
+
+                      roomUsers.forEach((roomPeerId) => {
+                        if (roomPeerId !== peer.id && !peerConnections.current[roomPeerId]) {
+                          const outboundStream = originalStream.current
+                          if (!outboundStream) return
+
+                          try {
+                            const call = peer.call(roomPeerId, outboundStream)
+                            peerConnections.current[roomPeerId] = call
+
+                            call.on("stream", (remoteStream) => {
+                              setRemoteStreams((prevStreams) => {
+                                if (!prevStreams[roomPeerId]) {
+                                  return { ...prevStreams, [roomPeerId]: remoteStream }
+                                }
+                                return prevStreams
+                              })
+                            })
+
+                            call.on("close", () => {
+                              delete peerConnections.current[roomPeerId]
+                              setRemoteStreams((prevStreams) => {
+                                const newStreams = { ...prevStreams }
+                                delete newStreams[roomPeerId]
+                                return newStreams
+                              })
+                            })
+                          } catch (error) {
+                            console.error("Erro ao processar chamada Peer", error)
+                          }
+                        }
+                      })
+                    }
+
+                    if (data.type === "screen-share-stop") {
+                      const peerId = data.peerId
+                      setRemoteStreams((prevStreams) => {
+                        const newStreams = { ...prevStreams }
+                        delete newStreams[`screen-${peerId}`]
+                        return newStreams
+                      })
+
+                      const screenCall = peerConnections.current[`screen-${peerId}`]
+                      if (screenCall) {
+                        screenCall.close()
+                        delete peerConnections.current[`screen-${peerId}`]
+                      }
+                    }
+
+                    if (data.type === "chat-message") {
+                      setChatMessages((prev) => [...prev, { sender: data.sender, text: data.text }])
+                    }
+
+                    if (data.type === "receive-file") {
+                      setChatMessages((prev) => [
+                        ...prev,
+                        {
+                          sender: data.sender,
+                          text: `Ficheiro: ${data.filename}`,
+                          link: data.link
+                        }
+                      ])
+                    }
+                  } catch (error) {
+                    console.error("Erro ao processar mensagem Websocket", error)
+                  }
+                }
+              })
+
+              peer.on("call", (call) => {
+                try {
+                  if (call.metadata?.type === "screen") {
+                    call.answer()
+                    peerConnections.current[`screen-${call.peer}`] = call
+
+                    call.on("stream", (remoteStream) => {
+                      setRemoteStreams((prevStreams) => ({
+                        ...prevStreams,
+                        [`screen-${call.peer}`]: remoteStream,
+                      }))
+
+                      remoteStream.getVideoTracks().forEach((track) => {
+                        track.onended = () => {
+                          setRemoteStreams((prevStreams) => {
+                            const newStreams = { ...prevStreams }
+                            delete newStreams[`screen-${call.peer}`]
+                            return newStreams
+                          })
+                        }
+                      })
+                    })
+                  } else {
+                    if (originalStream.current) {
+                      call.answer(originalStream.current)
+                    } else {
+                      call.answer()
+                    }
+
+                    call.on("stream", (remoteCamStream) => {
+                      setRemoteStreams((prev) => ({
+                        ...prev,
+                        [call.peer]: remoteCamStream
+                      }))
+                    })
+                  }
+
+                  call.on("close", () => {
+                    delete peerConnections.current[call.peer]
+
+                    setRemoteStreams((prevStreams) => {
+                      const newStreams = { ...prevStreams }
+                      delete newStreams[`screen-${call.peer}`]
+                      return newStreams
+                    })
+                  })
+                } catch (err) {
+                  console.error("Erro ao acesar câmara/microfone", err)
+                }
+              })
+            }
           }
         })
          const peer=peerRef.current
@@ -90,265 +258,12 @@ const ExplicacoesOnline = () => {
         const runtimeWsBaseUrl = wsBaseUrl || `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`
         ws.current = new WebSocket(`${runtimeWsBaseUrl}/ws`)
         
-       
-     
-      ws.current.onopen=()=>{
-        console.log("Websocket aberto")
-        console.log("URL WS",ws.current)
-       
-        const message={
-          type:"join-room",
-          userId:id,
-          peerId: peerId,
-          roomId:"explicacoes-room",
-          nome:nome
-        }
-       
-        console.log("Enviando join-room com peerId",peerId)
-        ws.current.send(JSON.stringify(message))
-      }
-         
-         
-
- 
-     
-      ws.current.onmessage=(event)=>{
-
-     
-        console.log("Websocket recebeu algo")
-        console.log("Mensagem recebida via websocket",event.data)
-        try{
-        const data = JSON.parse(event.data)
-
-       
-        
-     
-        console.log("Data recebida",data)
-
-
-
-                    // Se receber a lista de usuários conectados
-                    if (data.type === "room-update" ) {
-                      console.log("Room update recebido",data)
-                   
-                     
-                        const {usersInRoom,userNames}=data
-
-                        console.log("Utilizadores conectados",usersInRoom)
-                        console.log("Nomes dos utilizadores conetados",userNames)
-                       
-                        if(usersInRoom && userNames){
-                        setUsersInRoom(usersInRoom.map((peerId)=>({
-                          peerId,
-                          nomeUtilizador:userNames[peerId] ||"Utilizador desconhecido",
-                     }) )
-                    )
-                    console.log("Estado atualizado usersInRoom",usersInRoom)
-                   
-                 
-                  }else{
-                    console.error("Dados de utilizadores não recebido corretamente")
-                  }
-
-                  if(data.type==="join-room"){
-                    console.log("join-room",data.message)
-                  }
-                 
-                 
-                 
-                         usersInRoom.forEach((peerId) => {
-                            if (peerId!==peer.id &&!peerConnections.current[peerId]) {
-                              try{
-                             
-                           
-                           
-
-                              const call = peerRef.current.call(peerId, stream);
-                             
-                              console.log(call)
-                              console.log(stream)
-                             
-                              peerConnections.current[peerId]=call
-                           
-                              call.on("stream", (remoteStream) => {
-                                console.log(`Recebendo stream de ${peerId}`);
-
-                               
-
-                               
-                                setRemoteStreams((prevStreams) =>{
-                                  if(!prevStreams[peerId]){
-                                 return {...prevStreams,[peerId]:remoteStream}
-                                  }
-                                  return prevStreams
-                                })
-                                 
-                     
-                                console.log("Estado atualizado com novo stream remoto");
-                              });
-                           
-                     
-                              call.on("close", () => {
-                                console.log(`Chamada com ${peerId} encerrada.`);
-                                delete peerConnections.current[peerId]
-                         
-                                setRemoteStreams((prevStreams)=>{
-                                const newStreams={...prevStreams}
-                                delete newStreams [peerId]
-                                return newStreams
-                              });
-                              })
-                            }catch(error){
-                              console.error("Erro ao processar chamada Peer",error)
-                            }
-                          }
-                        })
-                      }
-                      if(data.type==="screen-share-stop"){
-                        const peerId=data.peerId
-                        console.log(`Utilizador ${peerId} terminou a partilha`)
-                        setRemoteStreams((prevStreams)=>{
-                          const newStreams={...prevStreams}
-                          delete newStreams[`screen-${peerId}`]
-                          return newStreams
-                        })
-                        const screenCall=peerConnections.current[`screen-${peerId}`]
-                        if(screenCall){
-                          screenCall.close()
-                          delete peerConnections.current[`screen-${peerId}`]
-                        }
-                      }
-                      if (data.type === "chat-message") {
-                        setChatMessages((prev) => [...prev, { sender: data.sender, text: data.text }]);
-                      }
-                 
-                      if (data.type === "receive-file") {
-                        
-                       
-                        setChatMessages((prev) => [
-                          ...prev,
-                          {
-                            sender:data.sender,
-                            text: `Ficheiro: ${data.filename}`,
-                            link: data.link
-                          },
-                        ]);
-                      }
-                 
-                    } catch (error) {
-                      console.error("Erro ao processar mensagem Websocket", error);
-                    }
-                  };
-                 
-   
-                   
-                       
-                     
-                   
-                   
-                   
-                   
-                 
-
-                   
-                 
-                 
-               
-                  peer.on("call", (call) => {
-                  try{
-
-                    if(call.metadata?.type==="screen"){
-             
-             
-              call.answer(); // Responde a chamada com o próprio stream
-             
-             peerConnections.current[`screen-${call.peer}`]=call
-             
-             
-              call.on("stream", (remoteStream) => {
-                  console.log(`Recebendo stream de ${call.peer}`);
-                 
-                  setRemoteStreams((prevStreams) => ({
-                      ...prevStreams,
-                      [`screen-${call.peer}`]:remoteStream,
-                  }));
-                  remoteStream.getVideoTracks().forEach((track)=>{
-                    track.onended=()=>{
-                      console.log(`Partilha de ecrã de ${call.peer}terminou`)
-                      setRemoteStreams((prevStreams)=>{
-                        const newStreams={...prevStreams}
-                        delete newStreams[`screen-${call.peer}`]
-                        return newStreams
-                      })
-                    }
-                  })
-                })
-                }else{
-                  call.answer(originalStream.current)
-                  call.on("stream",(remoteCamStream)=>{
-                    setRemoteStreams((prev)=>({
-                      ...prev,[call.peer]:remoteCamStream
-                    }))
-                  })
-
-                }
-               
-                 
-         
-             
-              call.on("close", () => {
-                                console.log(`Chamada com ${call.peer} encerrada.`);
-                               
-                                delete peerConnections.current[call.peer]
-                         
-                                setRemoteStreams((prevStreams)=>{
-                                const newStreams={...prevStreams}
-                                delete newStreams [`screen-${call.peer}`]
-                                return newStreams
-                              });
-                            })
-
-                           
-                           
-                           
-                         
-                           
-                         
-                       
-     
-                       
-                          }catch(err){
-                          console.error("Erro ao acesar câmara/microfone",err)
-                          }
-                        })
-                      })
-                    }
-                   
-
-                 
-
-
-
-
-                  }).catch((err)=>{console.error("Erro ao acessar câmara/microfone",err)
-                  })
-               
-                   
-                 
-               
-               
-                   
-                     
-                     
-                      window.addEventListener("beforeunload",handleWindowClose)
-                      return()=>{
-                        handleWindowClose()
-                        window.removeEventListener("beforeunload",handleWindowClose)
-                      }
-    }, [])
-
-    useEffect(()=>{
-      console.log("Lista atualizada de usuáerios",usersInRoom)
+                setupRealtime()
+              }).catch((err)=>{
+                console.error("Erro ao acessar câmara/microfone",err)
+                setErro("Permissão de câmara/microfone bloqueada. O chat continuará disponível.")
+                setupRealtime()
+              })
       usersInRoom.forEach((user)=>console.log(`Usuário ${user.nomeUtilizador},PeerId ${user.peerId}`))
     },[usersInRoom])
 
@@ -541,6 +456,10 @@ const ExplicacoesOnline = () => {
        
   const sendMessage = () => {
     if (message.trim() === "") return
+    if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
+      setErro("Ligação ao chat indisponível. Recarregue a página.")
+      return
+    }
       const msg = {
         type: "chat-message",
         sender: nomeExplicando,
