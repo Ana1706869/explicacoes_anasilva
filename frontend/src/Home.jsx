@@ -24,7 +24,7 @@ const Home=()=>{
             return
         }
         try{
-            const response=await axios.post(`${process.env.REACT_APP_SERVER_URI}/login`,{
+            const response=await axios.post(`/login`,{
                 email:formData.email,
                 password:formData.password,
             })
@@ -47,7 +47,7 @@ const Home=()=>{
             
             console.error("Erro ao fazer login", error)
             limparCampos()
-            setErro("Erro ao fazer login. Tente novamente.")
+            setErro(error?.response?.data?.message || "Erro ao fazer login. Tente novamente.")
             
         }
         

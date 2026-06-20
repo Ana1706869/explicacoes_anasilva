@@ -45,6 +45,19 @@ const upload=multer({storage:storage})
 const app=express()
 const server=http.createServer(app)
 const wss=new WebSocket.Server({noServer:true,perMessageDeflate:false})
+
+const isMongoReady = () => mongoose.connection.readyState === 1
+
+const requireMongoConnection = (req, res, next) => {
+  if (!isMongoReady()) {
+    return res.status(503).json({
+      message: "Base de dados indisponivel. Verifique MONGO_URI no Render e o DNS do MongoDB Atlas."
+    })
+  }
+
+  next()
+}
+
 server.on("upgrade",(request, socket,head)=>{
   const{pathname}=new URL (request.url, `http://${request.headers.host}`)
   if (pathname==="/ws"){
@@ -273,7 +286,7 @@ const validarDataHora=(data,horaInicio)=>{
 
 
 
-app.get("/explicandos", async(req,res)=>{
+app.get("/explicandos", requireMongoConnection, async(req,res)=>{
     try {
         const explicandos=await Explicandos.find()
         res.json(explicandos)
@@ -286,7 +299,7 @@ app.get("/explicandos", async(req,res)=>{
 
 
 
-app.get("/explicacoes", async(req,res)=>{
+app.get("/explicacoes", requireMongoConnection, async(req,res)=>{
     try {
         const explicacoes=await Explicacoes.find()
         res.json(explicacoes)
@@ -299,7 +312,7 @@ app.get("/explicacoes", async(req,res)=>{
     
 })
 
-app.post("/registo", async(req,res)=>{
+app.post("/registo", requireMongoConnection, async(req,res)=>{
     try{
 console.log("Dados recebidos:",req.body)
 const {nome, email, password}=req.body
@@ -328,7 +341,7 @@ res.status(201).json({message:"Explicando registado com sucesso"})
     }
     })
 
-    app.get("/explicandos/:email", async(req,res)=>{
+    app.get("/explicandos/:email", requireMongoConnection, async(req,res)=>{
         const{email}=req.params
         const getExplicando=await Explicandos.findOne({email})
     
@@ -340,12 +353,11 @@ res.status(201).json({message:"Explicando registado com sucesso"})
     }
     )
 
-    app.post("/login", async (req, res)=>{
+    app.post("/login", requireMongoConnection, async (req, res)=>{
         try{
             const {email, password}=req.body
             if(!email ||!password){
-                return 
-                res.status(400).json({message:"Todos os campos são obrigatórios!"})
+          return res.status(400).json({message:"Todos os campos são obrigatórios!"})
             }
             const explicando=await Explicandos.findOne({email})
 
