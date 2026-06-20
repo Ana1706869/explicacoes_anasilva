@@ -16,13 +16,21 @@ const Forum=require("./modelos/Forum")
 
 const multer=require("multer")
 const path=require("path")
+const fs=require("fs")
 const bcrypt=require("bcryptjs")
 const users={}
 const usersInRoom=[]
 const {ExpressPeerServer}=require("peer")
+const uploadsDir=path.join(__dirname,"uploads")
+const frontendBuildPath=path.resolve(__dirname,"..","frontend-build")
+
+if(!fs.existsSync(uploadsDir)){
+  fs.mkdirSync(uploadsDir,{recursive:true})
+}
+
 const storage=multer.diskStorage({
   destination:(req,file,cb)=>{
-    cb(null,"uploads/")
+    cb(null,uploadsDir)
   },
     filename:(req,file,cb)=>{
       cb(null,Date.now()+""+file.originalname)
@@ -36,7 +44,18 @@ const upload=multer({storage:storage})
 
 const app=express()
 const server=http.createServer(app)
-const wss=new WebSocket.Server({server})
+const wss=new WebSocket.Server({noServer:true,perMessageDeflate:false})
+server.on("upgrade",(request, socket,head)=>{
+  const{pathname}=new URL (request.url, `http://${request.headers.host}`)
+  if (pathname==="/ws"){
+    wss.handleUpgrade(request,socket,head,(ws)=>{
+
+   
+    wss.emit("connection",ws,request)
+     })
+  }
+})
+
 console.log("Estado atual users",users)
 console.log("Estado atual usersInRoom",usersInRoom)
 
@@ -185,23 +204,26 @@ function broadcast(msg,exclude) {
 app.use(cors({origin:"*"}))
 
 app.use(express.json())
-app.use("/uploads", express.static(path.join(__dirname,"uploads")))
+app.use("/uploads", express.static(uploadsDir))
+
+if(fs.existsSync(frontendBuildPath)){
+  app.use(express.static(frontendBuildPath))
+}
 
 
 
-const peerServer=ExpressPeerServer(server,{
-    debug:true,
-})
-app.use("/peerjs",peerServer)
+
 app.post("/upload",upload.single("file"),(req,res)=>{
   const file=req.file
   if(!file)return res.status(400).json({error:"Nenhum ficheiro recebido"})
+
+  const publicBaseUrl=process.env.PUBLIC_BASE_URL || `${req.protocol}://${req.get("host")}`
 
  
 
   res.json({
     originalName:file.originalname,
-    url:`${process.env.REACT_APP_SERVER_URI}/uploads/${file.filename}`
+    url:`${publicBaseUrl}/uploads/${file.filename}`
   })
 })
 
@@ -249,9 +271,7 @@ const validarDataHora=(data,horaInicio)=>{
 
 
 
-app.get("/",async(req,res)=>{
-    res.send("API do sistema de explicações está a  funcionar!")
-})
+
 
 app.get("/explicandos", async(req,res)=>{
     try {
@@ -528,12 +548,18 @@ app.put("/explicacoes/:id",async(req,res)=>{
       const mensagens=await Forum.find().sort({criadoEm:-1})
       res.json(mensagens)
     })
+
+if(fs.existsSync(frontendBuildPath)){
+  app.get("*",(req,res)=>{
+    res.sendFile(path.join(frontendBuildPath,"index.html"))
+  })
+}
  
 
     
 
 server.listen(PORT,()=>{
-    console.log(`Servidor está a correr em http://localhost:${PORT}`)
+    console.log(`Servidor está a correr na porta ${PORT}`)
 })
 
 

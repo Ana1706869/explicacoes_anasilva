@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import Menu from "./Menu"
 import React, {useState, useEffect,useRef} from "react"
 import axios from "axios"
+import { httpBaseUrl } from "./apiConfig";
 const  Forum=()=>{
     const [nomeExplicando,setNomeExplicando]=useState("")
         const [explicandoId, setExplicandoId]=useState("")
@@ -29,7 +30,7 @@ const  Forum=()=>{
                 setErro("Erro! Utilizador não autenticado")
             }
     
-            axios.get(`${process.env.REACT_APP_SERVER_URI}/explicandos/${emailLogin}`).then (response =>{
+            axios.get(`/explicandos/${emailLogin}`).then (response =>{
                 console.error("Resposta do backend:",response.data)
                 setNomeExplicando(response.data.nome)
                 setExplicandoId(response.data.explicandoId)
@@ -41,7 +42,7 @@ const  Forum=()=>{
     },[])
 
     const carregarMensagens=()=>{
-        axios.get(`${process.env.REACT_APP_SERVER_URI}/forum`).then((res)=>{
+        axios.get(`/forum`).then((res)=>{
             setMensagens(res.data)
         })
     }
@@ -59,7 +60,7 @@ const  Forum=()=>{
                 return
             }
 
-            await axios.post(`${process.env.REACT_APP_SERVER_URI}/forum`,formData,{
+            await axios.post(`/forum`,formData,{
                 headers:{"Content-Type":"multipart/form-data"}
             })
             setMensagem("")
@@ -116,7 +117,7 @@ const  Forum=()=>{
                 <p className="mensagemForum">{m.mensagem}</p>
                 {m.ficheiro && (
                 <p className="ficheiroForum">
-                    Ficheiro:<a href={`${process.env.REACT_APP_SERVER_URI}/uploads/${m.ficheiro}`}download>{m.ficheiro}</a>
+                    Ficheiro:<a href={`${httpBaseUrl}/uploads/${m.ficheiro}`} download>{m.ficheiro}</a>
                 </p>
                 )}
                 </div>
