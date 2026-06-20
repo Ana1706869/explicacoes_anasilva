@@ -47,13 +47,22 @@ const ExplicacoesOnline = () => {
       setErro("Erro! Utilizador não autenticado");
     }
  
+    let nome = emailLogin
+    let id = explicandoId || ""
+    setNomeExplicando(nome)
+    if (id) setExplicandoId(id)
+
     axios
       .get(`/explicandos/${emailLogin}`)
       .then((response) => {
-        const nome=response.data.nome
-        const id=response.data.explicandoId
-        setNomeExplicando(nome);
-        setExplicandoId(id);
+        nome = response.data.nome
+        id = response.data.explicandoId
+        setNomeExplicando(nome)
+        setExplicandoId(id)
+      })
+      .catch((err) => {
+        console.error("Erro ao buscar dados do explicando:", err)
+      })
 
          navigator.mediaDevices
       .getUserMedia({ video: true, audio: true })
@@ -323,9 +332,6 @@ const ExplicacoesOnline = () => {
 
                   }).catch((err)=>{console.error("Erro ao acessar câmara/microfone",err)
                   })
-
-                }).catch((err)=>{console.error("Erro ao buscar dados do explicando",err)
-                })
                
                    
                  

@@ -96,11 +96,6 @@ console.log("Estado atual usersInRoom",usersInRoom)
               console.log("Mensagem recebida bruta", message)
               const data=JSON.parse(message)
               console.log("Mensagem recebida do cliente", data);
-        const { roomId, peerId, nome } = data;
-                console.log(`Usuário ${nome} com peerId ${peerId} entrou na sala ${roomId}`);
-                users[peerId] = nome;
-                ws.peerId = peerId;
-              
          
               if (data.type === "join-room") {
                 const { roomId, peerId, nome } = data;
