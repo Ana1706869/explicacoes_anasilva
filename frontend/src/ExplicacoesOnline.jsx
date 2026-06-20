@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Menu from "./Menu";
 import Peer, { StreamConnection } from "peerjs"
+import { wsBaseUrl } from "./apiConfig";
 
 
 
@@ -47,7 +48,7 @@ const ExplicacoesOnline = () => {
     }
  
     axios
-      .get(`${process.env.REACT_APP_SERVER_URI}/explicandos/${emailLogin}`)
+      .get(`/explicandos/${emailLogin}`)
       .then((response) => {
         const nome=response.data.nome
         const id=response.data.explicandoId
@@ -63,12 +64,23 @@ const ExplicacoesOnline = () => {
           localVideoRef.current.srcObject=stream
         }
         if(!peerRef.current){
-        peerRef.current=new Peer()
+        peerRef.current=new Peer(undefined, {
+          config: {
+            iceServers: [
+              { urls: "stun:stun.l.google.com:19302" },
+              { urls: "stun:stun1.l.google.com:19302" },
+              { urls: "stun:stun2.l.google.com:19302" },
+              { urls: "stun:stun3.l.google.com:19302" }
+            ]
+          }
+        })
          const peer=peerRef.current
           peer.on("open",(peerId)=>{
             console.log("Peer conectado com id:", peerId);
            
-        ws.current = new WebSocket(process.env.REACT_APP_WS_URL)
+        const runtimeWsBaseUrl = wsBaseUrl || `${window.location.protocol === "https:" ? "wss" : "ws"}://${window.location.host}`
+        ws.current = new WebSocket(`${runtimeWsBaseUrl}/ws`)
+        
        
      
       ws.current.onopen=()=>{
@@ -483,7 +495,7 @@ const ExplicacoesOnline = () => {
         formData.append("file",file)
 
         try{
-          const response=await fetch(`${process.env.REACT_APP_SERVER_URI}/upload`,{
+          const response=await fetch(`/upload`,{
             method:"POST",
             body:formData
           })

@@ -139,7 +139,7 @@ console.log("Estado atual usersInRoom",usersInRoom)
               }
          
               if (data.type === "chat-message") {
-                const sender = data.sender || wss.peerId || "anónimo";
+                const sender = data.sender || ws.peerId || "anónimo";
                 wss.clients.forEach((client) => {
                   if (client !== ws && client.readyState === WebSocket.OPEN) {
                     client.send(
@@ -154,7 +154,7 @@ console.log("Estado atual usersInRoom",usersInRoom)
               }
          
               if (data.type === "send-file") {
-                const sender = data.sender || ws.peerId || "anónimo";
+                const sender = data.sender || ws.nome || ws.peerId || "anónimo";
                 const payload = {
                   type: "receive-file",
                   sender,
