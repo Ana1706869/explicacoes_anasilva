@@ -102,6 +102,8 @@ console.log("Estado atual usersInRoom",usersInRoom)
                 console.log(`Usuário ${nome} com peerId ${peerId} entrou na sala ${roomId}`);
                 users[peerId] = nome;
                 ws.peerId = peerId;
+                ws.roomId = roomId;
+                ws.nome = nome;
          
                 if (!usersInRoom.includes(peerId)) {
                   usersInRoom.push(peerId);
@@ -134,30 +136,39 @@ console.log("Estado atual usersInRoom",usersInRoom)
               }
          
               if (data.type === "chat-message") {
-                const sender = data.sender || ws.peerId || "anónimo";
-                wss.clients.forEach((client) => {
-                  if (client !== ws && client.readyState === WebSocket.OPEN) {
-                    client.send(
-                      JSON.stringify({
-                        type: "chat-message",
-                        sender,
-                        text: data.text,
-                      })
-                    );
-                  }
-                });
+                const sender = data.sender || ws.nome || ws.peerId || "anónimo";
+                const text = typeof data.text === "string" ? data.text.trim() : "";
+
+                if (!text) {
+                  ws.send(JSON.stringify({ type: "error", message: "Mensagem vazia" }));
+                } else {
+                  const payload = {
+                    type: "chat-message",
+                    id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+                    roomId: ws.roomId || data.roomId || "explicacoes-room",
+                    sender,
+                    senderPeerId: ws.peerId,
+                    text,
+                    sentAt: new Date().toISOString(),
+                  };
+
+                  broadcastToRoom(JSON.stringify(payload), payload.roomId);
+                }
               }
          
               if (data.type === "send-file") {
                 const sender = data.sender || ws.nome || ws.peerId || "anónimo";
                 const payload = {
                   type: "receive-file",
+                  id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+                  roomId: ws.roomId || data.roomId || "explicacoes-room",
                   sender,
                   filename: data.filename,
-                  link: data.link
+                  link: data.link,
+                  sentAt: new Date().toISOString(),
                  
                 };
-                broadcast(JSON.stringify(payload),ws);
+                broadcastToRoom(JSON.stringify(payload), payload.roomId);
               }
 
          
@@ -202,6 +213,14 @@ function broadcast(msg,exclude) {
       }
     });
   }
+
+function broadcastToRoom(msg, roomId) {
+  wss.clients.forEach((client) => {
+    if (client.readyState !== WebSocket.OPEN) return
+    if ((client.roomId || "explicacoes-room") !== roomId) return
+    client.send(msg)
+  })
+}
 
        
 

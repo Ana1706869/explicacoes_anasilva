@@ -26,6 +26,7 @@ const ExplicacoesOnline = () => {
   const messagesEndRef = useRef(null);
   const idRef = useRef("");
   const nomeRef = useRef("");
+  const seenMessageIdsRef = useRef(new Set());
 
   const setupRealtime = () => {
     if (peerRef.current) return;
@@ -134,16 +135,21 @@ const ExplicacoesOnline = () => {
 
           if (data.type === "chat-message") {
             console.log("Mensagem recebida:", data);
-            setChatMessages((prev) => [...prev, { sender: data.sender, text: data.text }]);
+            if (data.id && seenMessageIdsRef.current.has(data.id)) return;
+            if (data.id) seenMessageIdsRef.current.add(data.id);
+            setChatMessages((prev) => [...prev, { sender: data.sender, text: data.text, id: data.id }]);
           }
 
           if (data.type === "receive-file") {
+            if (data.id && seenMessageIdsRef.current.has(data.id)) return;
+            if (data.id) seenMessageIdsRef.current.add(data.id);
             setChatMessages((prev) => [
               ...prev,
               {
                 sender: data.sender,
                 text: `Ficheiro: ${data.filename}`,
-                link: data.link
+                link: data.link,
+                id: data.id
               }
             ]);
           }
@@ -295,11 +301,6 @@ const ExplicacoesOnline = () => {
     }
 
     try {
-      setChatMessages((prev) => [
-        ...prev,
-        { sender: nomeRef.current, text: message }
-      ]);
-
       ws.current.send(
         JSON.stringify({
           type: "chat-message",
