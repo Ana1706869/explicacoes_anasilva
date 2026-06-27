@@ -1,4 +1,4 @@
-const  MBWAy=()=>{
+const  MBWay=()=>{
 
     return(<div>
         <h2>Pagamento por MBWay</h2>
@@ -8,4 +8,4 @@ const  MBWAy=()=>{
     </div>)
 }
    
-export default MBWAyjjj
+export default MBWay
