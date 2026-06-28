@@ -144,7 +144,7 @@ console.log("Estado atual usersInRoom",usersInRoom)
                 } else {
                   const payload = {
                     type: "chat-message",
-                    id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+                    id: data.id || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
                     roomId: ws.roomId || data.roomId || "explicacoes-room",
                     sender,
                     senderPeerId: ws.peerId,
@@ -152,6 +152,7 @@ console.log("Estado atual usersInRoom",usersInRoom)
                     sentAt: new Date().toISOString(),
                   };
 
+                  console.log("Broadcasting chat-message:", payload);
                   broadcastToRoom(JSON.stringify(payload), payload.roomId);
                 }
               }
@@ -160,7 +161,7 @@ console.log("Estado atual usersInRoom",usersInRoom)
                 const sender = data.sender || ws.nome || ws.peerId || "anónimo";
                 const payload = {
                   type: "receive-file",
-                  id: `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
+                  id: data.id || `${Date.now()}-${Math.random().toString(36).slice(2, 10)}`,
                   roomId: ws.roomId || data.roomId || "explicacoes-room",
                   sender,
                   filename: data.filename,
@@ -168,6 +169,7 @@ console.log("Estado atual usersInRoom",usersInRoom)
                   sentAt: new Date().toISOString(),
                  
                 };
+                console.log("Broadcasting file:", payload);
                 broadcastToRoom(JSON.stringify(payload), payload.roomId);
               }
 
