@@ -11,6 +11,6 @@ services:
       - key: NODE_VERSION
         value: 20
       - key: MONGO_URI
-        sync: false
+        value: mongodb+srv://anasilvapinhel:Informatica_1706869@cluster0.lsz9utv.mongodb.net/explicacoes?retryWrites=true&w=majority&appName=Cluster0
       - key: PUBLIC_BASE_URL
         sync: false
