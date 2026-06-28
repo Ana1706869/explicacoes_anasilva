@@ -1,36 +1,34 @@
 FROM node:20-alpine AS frontend-builder
+
 WORKDIR /app/frontend
+# Copiar package files
+COPY frontend/package.json frontend/package-lock.json ./
+# Instalar dependências
+RUN npm install --production=false
 
-# Copiar package.json e package-lock.json
-COPY frontend/package*.json ./
-
-# Instalar dependências do frontend
-RUN npm install
-
-# Copiar código fonte
+# Copiar vite config e código fonte
+COPY frontend/index.html frontend/vite.config.js ./
 COPY frontend/src ./src
-COPY frontend/index.html ./
-COPY frontend/vite.config.js ./
-COPY frontend/.env* ./
 
-# Build do frontend
+# Build
 RUN npm run build
 
-FROM node:20-alpine AS backend-runtime
+# Backend runtime
+FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
 
-# Copiar e instalar dependências do backend
-COPY backend/package*.json ./backend/
+# Instalar dependências do backend
+COPY backend/package.json backend/package-lock.json ./backend/
 RUN cd backend && npm install --omit=dev && cd ..
 
-# Copiar código do backend
+# Copiar backend code
 COPY backend/modelos ./backend/modelos
 COPY backend/server.js ./backend/
 COPY backend/public ./backend/public
 
-# Copiar build do frontend para a localização esperada
+# Copiar built frontend
 COPY --from=frontend-builder /app/frontend/build ./frontend-build
 
 EXPOSE 8080
