@@ -1,26 +1,25 @@
 FROM node:20-alpine AS frontend-builder
+WORKDIR /app
+
+# Copiar todo o frontend (será ignorado node_modules pelo .dockerignore)
+COPY frontend frontend/
 
 WORKDIR /app/frontend
-# Copiar package files
-COPY frontend/package.json frontend/package-lock.json ./
+
 # Instalar dependências
 RUN npm install --production=false
-
-# Copiar vite config e código fonte
-COPY frontend/index.html frontend/vite.config.js ./
-COPY frontend/src ./src
 
 # Build
 RUN npm run build
 
-# Backend runtime
+# Backend stage
 FROM node:20-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=8080
 
-# Instalar dependências do backend
-COPY backend/package.json backend/package-lock.json ./backend/
+# Copiar e instalar dependências do backend
+COPY backend/package*.json ./backend/
 RUN cd backend && npm install --omit=dev && cd ..
 
 # Copiar backend code
