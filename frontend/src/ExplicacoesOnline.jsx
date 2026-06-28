@@ -301,11 +301,18 @@ const ExplicacoesOnline = () => {
     }
 
     try {
+      const messageId = Date.now();
+      
+      // Adiciona a mensagem imediatamente ao chat local
+      setChatMessages((prev) => [...prev, { sender: nomeRef.current, text: message, id: messageId }]);
+      
+      // Envia a mensagem ao servidor para os outros utilizadores
       ws.current.send(
         JSON.stringify({
           type: "chat-message",
           sender: nomeRef.current,
-          text: message
+          text: message,
+          id: messageId
         })
       );
 
