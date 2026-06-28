@@ -55,7 +55,7 @@ const ExplicacoesOnline = () => {
       ws.current = new WebSocket(`${runtimeWsBaseUrl}/ws`);
 
       ws.current.onopen = () => {
-        console.log("WebSocket conectado");
+        console.log("✅ WebSocket conectado");
         const joinMessage = {
           type: "join-room",
           userId: idRef.current,
@@ -65,7 +65,15 @@ const ExplicacoesOnline = () => {
         };
 
         ws.current.send(JSON.stringify(joinMessage));
-        console.log("Mensagem de join-room enviada");
+        console.log("📤 Mensagem de join-room enviada");
+      };
+
+      ws.current.onerror = (error) => {
+        console.error("❌ Erro WebSocket:", error);
+      };
+
+      ws.current.onclose = () => {
+        console.log("🔌 WebSocket fechado");
       };
 
       ws.current.onmessage = (event) => {
@@ -294,6 +302,17 @@ const ExplicacoesOnline = () => {
 
   const sendMessage = () => {
     if (!message.trim()) return;
+
+    console.log("🔍 Estado do WebSocket:", {
+      wsExists: ws.current !== null,
+      readyState: ws.current?.readyState,
+      readyStateNames: {
+        0: "CONNECTING",
+        1: "OPEN",
+        2: "CLOSING",
+        3: "CLOSED"
+      }
+    });
 
     if (!ws.current || ws.current.readyState !== WebSocket.OPEN) {
       alert("Conexão ao chat não disponível. Tente recarregar a página.");
