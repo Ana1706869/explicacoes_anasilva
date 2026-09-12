@@ -2,7 +2,11 @@ import axios from "axios";
 
 const normalizeBaseUrl = (value) => (value ? value.replace(/\/+$/, "") : "");
 
-const apiBaseUrl = normalizeBaseUrl(process.env.REACT_APP_SERVER_URI);
+const apiBaseUrl = normalizeBaseUrl(
+  process.env.REACT_APP_SERVER_URI
+  || import.meta?.env?.VITE_SERVER_URI
+  || "https://explicacoes-backend.onrender.com"
+);
 const runtimeOrigin = typeof window !== "undefined" ? normalizeBaseUrl(window.location.origin) : "";
 
 if (apiBaseUrl) {
@@ -26,7 +30,7 @@ if (apiBaseUrl && typeof window !== "undefined" && typeof window.fetch === "func
   };
 }
 
-export const wsBaseUrl = normalizeBaseUrl(process.env.REACT_APP_WS_URL)
+export const wsBaseUrl = normalizeBaseUrl(process.env.REACT_APP_WS_URL || import.meta?.env?.VITE_WS_URL)
   || (apiBaseUrl ? apiBaseUrl.replace(/^http/i, "ws") : "");
 
 export const httpBaseUrl = apiBaseUrl || runtimeOrigin;
