@@ -603,7 +603,9 @@ const startServer = async () => {
     })
   } catch (error) {
     console.error("Servidor não iniciado porque a base de dados não está disponível")
-    process.exitCode = 1
+    server.listen(PORT,()=>{
+      console.log(`Servidor está a correr na porta ${PORT} sem ligação à base de dados`)
+    })
   }
 }
 

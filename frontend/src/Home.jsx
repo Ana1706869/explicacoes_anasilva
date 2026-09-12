@@ -5,6 +5,7 @@ import Registo from "./Registo"
 import React from "react"
 import reactLogo from "./assets/React.jpg"
 import axios from "axios"
+import { httpBaseUrl } from "./apiConfig"
 
 
 
@@ -24,7 +25,7 @@ const Home=()=>{
             return
         }
         try{
-            const response=await axios.post(`/login`,{
+            const response=await axios.post(`${httpBaseUrl}/login`,{
                 email:formData.email,
                 password:formData.password,
             })
