@@ -4,13 +4,13 @@ services:
     env: node
     plan: free
     rootDir: .
-    buildCommand: npm ci --omit=dev --prefix backend
+    buildCommand: npm ci --omit=dev --install-strategy=nested --prefix backend
     startCommand: node backend/server.js
-    autoDeploy: false
+    autoDeploy: true
     envVars:
       - key: NODE_VERSION
         value: 20
       - key: MONGO_URI
-        value: mongodb+srv://anasilvapinhel:Informatica_1706869@cluster0.lsz9utv.mongodb.net/explicacoes?retryWrites=true&w=majority&appName=Cluster0
+        sync: false
       - key: PUBLIC_BASE_URL
         sync: false

@@ -20,7 +20,6 @@ const fs=require("fs")
 const bcrypt=require("bcryptjs")
 const users={}
 const usersInRoom=[]
-const {ExpressPeerServer}=require("peer")
 const uploadsDir=path.join(__dirname,"uploads")
 const frontendBuildPath=path.resolve(__dirname,"..","frontend-build")
 
@@ -277,9 +276,19 @@ app.post("/upload",upload.single("file"),(req,res)=>{
 
 
 
-mongoose.connect(process.env.MONGO_URI,{useNewUrlParser:true,useUnifiedTopology:true,})
-.then(()=>console.log("Conectado ao MongoDB"))
-.catch((err)=>console.error("Erro ao conectar ao MongoDB",err))
+const connectMongo = async () => {
+  if (!process.env.MONGO_URI) {
+    throw new Error("MONGO_URI não está configurada")
+  }
+
+  try {
+    await mongoose.connect(process.env.MONGO_URI,{useNewUrlParser:true,useUnifiedTopology:true,})
+    console.log("Conectado ao MongoDB")
+  } catch (error) {
+    console.error("Erro ao conectar ao MongoDB",error.message)
+    throw error
+  }
+}
 
 const validarDataHora=(data,horaInicio)=>{
     const agora=new Date()
@@ -586,9 +595,21 @@ if(fs.existsSync(frontendBuildPath)){
 
     
 
-server.listen(PORT,()=>{
-    console.log(`Servidor está a correr na porta ${PORT}`)
-})
+const startServer = async () => {
+  try {
+    await connectMongo()
+    server.listen(PORT,()=>{
+      console.log(`Servidor está a correr na porta ${PORT}`)
+    })
+  } catch (error) {
+    console.error("Servidor não iniciado porque a base de dados não está disponível")
+    process.exitCode = 1
+  }
+}
+
+if (require.main === module) {
+  startServer()
+}
 
 
 module.exports = router;
