@@ -1,7 +1,7 @@
-export const isExplicador=()=>{
-    return localStorage.getItem("tipoUsuario")==="Explicador"
-}
+export const isExplicador = () => {
+  return sessionStorage.getItem("tipoUsuario") === "Explicador";
+};
 
-export const isExplicando=()=>{
-return localStorage.getItem("tipoUsuario")==="Explicando"
-}
+export const isExplicando = () => {
+  return sessionStorage.getItem("tipoUsuario") === "Explicando";
+};

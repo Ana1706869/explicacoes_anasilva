@@ -1,5 +1,6 @@
 const mongoose=require('mongoose')
 
+// A palavra-passe guardada neste modelo é o hash criado durante o registo.
 const explicandoSchema=new mongoose.Schema({
     nome:{type: String, required: true, unique:true},
     email:{type: String, required:true, unique:true},

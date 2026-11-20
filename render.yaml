@@ -14,3 +14,7 @@ services:
         sync: false
       - key: PUBLIC_BASE_URL
         sync: false
+      - key: JWT_SECRET
+        generateValue: true
+      - key: EXPLICADOR_EMAIL
+        value: anasilva_pinhel@hotmail.com

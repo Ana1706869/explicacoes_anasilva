@@ -25,7 +25,7 @@ RUN cd backend && npm install --omit=dev && cd ..
 # Copiar backend code
 COPY backend/modelos ./backend/modelos
 COPY backend/server.js ./backend/
-COPY backend/public ./backend/public
+COPY backend/userRole.js ./backend/
 
 # Copiar built frontend
 COPY --from=frontend-builder /app/frontend/build ./frontend-build

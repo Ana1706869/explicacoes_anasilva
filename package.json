@@ -11,10 +11,10 @@
     "react-scripts": "5.0.1"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "dev": "react-scripts start",
-    "build":"react-scripts build"
-   
+    "start": "npm --prefix frontend start",
+    "dev": "npm --prefix frontend start",
+    "build": "npm --prefix frontend run build",
+    "postinstall": "npm --prefix frontend install"
   },
   "eslintConfig": {
     "extends": [

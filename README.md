@@ -1,70 +1,152 @@
-# Getting Started with Create React App
+# Explicações
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+Aplicação web para gerir explicações entre explicandos e explicadores. Permite criar conta e iniciar sessão, pedir e gerir explicações, consultar o estado dos pedidos, participar em explicações online e usar o fórum para trocar mensagens e ficheiros.
 
-## Available Scripts
+## Arquitetura
 
-In the project directory, you can run:
+- **Frontend:** React 18, React Router e Vite. A interface comunica com a API por HTTP e usa WebSocket para atualizações em tempo real e salas de explicação online. PeerJS é usado para a ligação entre participantes.
+- **Backend:** Node.js e Express, com endpoints REST, autenticação JWT e WebSocket (`ws`) para comunicação em tempo real.
+- **Dados:** MongoDB através de Mongoose. Os modelos principais são explicandos, explicações e mensagens do fórum. Gravações de explicações online são guardadas em GridFS.
+- **Ficheiros:** anexos do fórum são guardados em `backend/uploads`; gravações temporárias são processadas em `backend/recording-tmp`.
 
-### `npm start`
+O backend distingue os papéis `Explicador` e `Explicando`. O endereço predefinido do explicador está em `backend/userRole.js`; `EXPLICADOR_EMAIL` permite configurar outro endereço. O login cria um JWT com validade de oito horas. No frontend, o token é mantido em `sessionStorage` e enviado nos pedidos protegidos.
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## Organização do código
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+```text
+backend/
+	server.js                  API HTTP, autenticação, WebSocket e arranque
+	userRole.js                Determinação do papel pelo endereço de email
+	modelos/                   Modelos Mongoose
+	*.test.js                  Testes Node.js do backend
+	uploads/                   Ficheiros enviados para o fórum
+	recording-tmp/             Ficheiros temporários de gravações
+frontend/
+	src/App.jsx                Rotas da aplicação
+	src/apiConfig.js           URL da API, autenticação dos pedidos e WebSocket
+	src/*.jsx                  Páginas e funcionalidades da aplicação
+	src/__tests__/             Testes de interface e fluxos
+	vite.config.js             Servidor de desenvolvimento, proxy e build
+```
 
-### `npm test`
+No frontend, os componentes das páginas estão organizados por fluxo: registo/login, pedidos e confirmação de explicações, explicações online, fórum, contactos e pagamentos. `lessonTiming.js` contém funções partilhadas para interpretar horários e identificar explicações em curso.
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Requisitos
 
-### `npm run build`
+- Node.js 20 ou compatível e npm
+- MongoDB acessível localmente ou uma instância MongoDB Atlas
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Configuração local
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+Instale as dependências em cada aplicação:
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+```powershell
+cd backend
+npm ci
+cd ..\frontend
+npm ci
+```
 
-### `npm run eject`
+Crie `backend/.env` (não inclua este ficheiro no controlo de versões):
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+```dotenv
+MONGO_URI=mongodb://127.0.0.1:27017/explicacoes
+JWT_SECRET=substitua-por-um-segredo-aleatorio
+EXPLICADOR_EMAIL=explicador@example.com
+PORT=9090
+```
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+`MONGO_URI` é obrigatória para as operações que usam a base de dados. Em produção, `JWT_SECRET` também é obrigatória; em desenvolvimento, se não for indicada, o servidor gera uma chave temporária e as sessões deixam de ser válidas quando o processo reinicia. `EXPLICADOR_EMAIL` é opcional: o endereço predefinido do código continua a ser reconhecido.
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+Arranque o backend e o frontend em terminais separados:
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+```powershell
+# Terminal 1, na pasta backend
+npm start
+```
 
-## Learn More
+```powershell
+# Terminal 2, na pasta frontend
+npm run start
+```
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+Abra `http://localhost:3000`. O Vite encaminha pedidos `/api` para `http://localhost:9090`; a API também pode ser acedida diretamente em `http://localhost:9090`. Para apontar o frontend a outro backend, defina `VITE_SERVER_URI`; para configurar separadamente o WebSocket, defina `VITE_WS_URL` no ambiente do Vite.
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+O script `npm run dev` do backend está configurado para usar `nodemon`, mas `nodemon` não está declarado nas dependências do projeto. Use `npm start` ou instale/configure `nodemon` antes de usar esse script.
 
-### Code Splitting
+## Testes e verificações
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+Os testes não precisam de uma instância MongoDB: os testes do backend substituem os modelos por dados em memória; os testes do frontend simulam pedidos, WebSocket, câmara e gravação.
 
-### Analyzing the Bundle Size
+Backend, a partir de `backend/`:
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+```powershell
+npm test
+```
 
-### Making a Progressive Web App
+Executa os ficheiros `*.test.js` com o runner nativo `node:test`. A suite cobre atribuição de papéis, regras de agendamento e salas WebSocket, incluindo autorização e gravações.
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+Frontend, a partir de `frontend/`:
 
-### Advanced Configuration
+```powershell
+npm test
+npm run lint
+npm run format:check
+npm run build
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+`npm test` executa Vitest em modo não interativo. Os testes cobrem autenticação e navegação por papel, marcação e confirmação de explicações, chat, ficheiros e comportamento da sala online. Os outros comandos verificam ESLint, formatação Prettier e compilação de produção.
 
-### Deployment
+## Build e deploy
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+O Dockerfile compila o frontend e cria uma imagem do backend que serve a aplicação compilada e a API no mesmo serviço. O deploy de referência é Google Cloud Run.
 
-### `npm run build` fails to minify
+### Deploy rápido no Cloud Run
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+Pré-requisitos: projeto Google Cloud com faturação, `gcloud` instalado e autenticado.
+
+```bash
+gcloud auth login
+gcloud config set project SEU_PROJECT_ID
+```
+
+Na raiz do projeto, execute:
+
+```bash
+./deploy-gcp-cloudrun.sh SEU_PROJECT_ID europe-west1 explicacoes-app
+```
+
+Antes do primeiro deploy, crie o segredo `explicacoes-jwt-secret` no Secret Manager e adicione-lhe uma versão. O segredo deve ser aleatório e nunca deve ser guardado no repositório. O script aceita outro nome de segredo como quarto argumento.
+
+Depois do deploy, configure `MONGO_URI` e `PUBLIC_BASE_URL` no serviço Cloud Run. `JWT_SECRET` é fornecida ao container através do Secret Manager. Exemplo:
+
+```bash
+gcloud run services update explicacoes-app \
+	--region europe-west1 \
+	--set-env-vars "MONGO_URI=...,PUBLIC_BASE_URL=https://explicacoes-app-xxxxx-ew.a.run.app"
+```
+
+### Deploy manual
+
+```bash
+gcloud services enable run.googleapis.com cloudbuild.googleapis.com artifactregistry.googleapis.com secretmanager.googleapis.com
+gcloud builds submit --tag gcr.io/SEU_PROJECT_ID/explicacoes-app:latest
+
+PROJECT_NUMBER="$(gcloud projects describe SEU_PROJECT_ID --format='value(projectNumber)')"
+RUNTIME_SERVICE_ACCOUNT="${PROJECT_NUMBER}-compute@developer.gserviceaccount.com"
+gcloud secrets add-iam-policy-binding explicacoes-jwt-secret \
+	--member="serviceAccount:${RUNTIME_SERVICE_ACCOUNT}" \
+	--role="roles/secretmanager.secretAccessor"
+
+gcloud run deploy explicacoes-app \
+	--image gcr.io/SEU_PROJECT_ID/explicacoes-app:latest \
+	--platform managed \
+	--region europe-west1 \
+	--service-account "$RUNTIME_SERVICE_ACCOUNT" \
+	--set-secrets JWT_SECRET=explicacoes-jwt-secret:latest \
+	--set-env-vars "MONGO_URI=...,PUBLIC_BASE_URL=..." \
+	--allow-unauthenticated \
+	--port 8080
+```
+
+Os anexos do fórum e os ficheiros temporários usam o filesystem local. As gravações concluídas são guardadas em GridFS na base de dados MongoDB. O filesystem do Cloud Run é efémero, pelo que anexos e temporários podem perder-se após reinícios ou alterações de instâncias. Para armazenamento persistente de anexos em produção, migre-os para Google Cloud Storage.
